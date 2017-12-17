@@ -1,0 +1,28 @@
+txn  =  LOAD  '/home/hduser/txns1.txt'  USING PigStorage(',')  AS  ( txnid, date, custid, amount:double, category, product, city, state, type);
+--dump txn;
+cust = load  '/home/hduser/custs'  using  PigStorage(',')  AS ( custid, firstname, lastname, age:long, profession);
+--dump cust;
+txnbycust = group txn by custid;
+--dump  txnbycust;
+spendbycust = foreach  txnbycust  generate group as customer_id,  ROUND_TO(SUM(txn.amount ),2) as totalsales;
+--dump spendbycust;
+a = filter spendbycust by totalsales>500;
+--dump a;
+--describe a;
+cust500 = join a by $0, cust by $0;
+--describe cust500;
+--dump cust500;
+final1 = foreach cust500 generate $0, $1, $3, $4, $5, $6;
+final = filter final1 by $4 < 50;
+--dump final;
+groupa = group final all;
+--describe groupa;
+--groupa: {group: chararray,final: {(a::customer_id: bytearray,a::totalsales: double,cust::firstname: bytearray,cust::lastname: bytearray,cust::age: long,cust::profession: bytearray)}}
+totalcount = foreach groupa generate COUNT(final);
+--dump totalcount;
+--totalsalesforcust = foreach groupa generate ROUND_TO(sum(spendbycust.totalsales),2);
+--dump totalsalesforcust;
+ans = limit (order final by totalsales desc) 10;
+dump ans;
+--illustrate ans;
+store ans into '/home/hduser/output_cust500';

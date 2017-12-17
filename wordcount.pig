@@ -1,0 +1,10 @@
+word  =  LOAD  '/home/hduser/logfile1'  USING TextLoader()  AS (word:chararray);
+--dump word;
+a = foreach word generate FLATTEN(TOKENIZE(word));
+--dump a;
+b = group a by $0;
+--dump b;
+--describe b;
+c = foreach b generate group, COUNT(a);
+dump c;
+--store c into '/home/hduser/output_wordcount';
